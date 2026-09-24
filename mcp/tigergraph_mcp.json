@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "tigergraph": {
+      "command": "uvx",
+      "args": ["tigergraph-mcp"],
+      "env": {
+        "TG_HOST": "${TG_HOST}",
+        "TG_SECRET": "${TG_SECRET}",
+        "TG_GRAPH": "Fraud_Investigation"
+      }
+    },
+    "fraud-investigation": {
+      "command": "python",
+      "args": ["-m", "mcp.fraud_mcp"],
+      "env": { "TG_HOST": "${TG_HOST}", "TG_SECRET": "${TG_SECRET}" }
+    }
+  }
+}
