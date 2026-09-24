@@ -1,0 +1,180 @@
+// =====================================================================
+//  Agentic Fraud Investigation - graph schema
+//  TigerGraph 4.x / Savanna
+//
+//  Run:  gsql -g Fraud_Investigation gsql/01_schema.gsql
+//        (or `python -m agent.load_tigergraph --schema`)
+// =====================================================================
+
+// TigerGraph creates vertex/edge types in the GLOBAL scope first, then binds
+// them into a graph.  `CREATE GRAPH g ()` followed by `CREATE VERTEX` is
+// rejected with "Please 'use global' first" -- the order below is what the
+// server accepts.
+//
+// NOTE ON NAMES: global type names are shared across every graph in a
+// workspace.  If the workspace already holds another solution that defines
+// `Card` or `Transaction` (the Savanna starter graph does), creation fails with
+// "the vertex name ... is used by another object".  Pass a prefix in that case:
+//     python -m agent.load_tigergraph --schema --prefix FI_
+// which emits FI_Card, FI_MADE, and so on.  On a clean workspace no prefix is
+// needed and the names below are used as written.
+
+USE GLOBAL
+
+// ---------------------------------------------------------------- core
+CREATE VERTEX Customer (
+    PRIMARY_ID customer_id STRING,
+    n_cards    INT,
+    n_txns     INT,
+    first_seen DATETIME,
+    last_seen  DATETIME,
+    home_region STRING,
+    total_spend DOUBLE
+) WITH primary_id_as_attribute="true"
+
+// card_id carries the published label (C01234-K1). phys_card is the
+// reconstructed physical card key (customer_id + card1): the K-suffix is an
+// issuer label that is not recoverable from the transaction columns, so the
+// two are kept side by side and the label is never guessed.
+CREATE VERTEX Card (
+    PRIMARY_ID card_id STRING,
+    phys_card   STRING,
+    customer_id STRING,
+    card1       STRING,
+    network     STRING,   // card4: visa / mastercard / amex / discover
+    card_type   STRING,   // card6: credit / debit
+    n_txns      INT,
+    first_seen  DATETIME,
+    last_seen   DATETIME,
+    amount_median DOUBLE,
+    amount_p95    DOUBLE
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX Transaction (
+    PRIMARY_ID txn_id STRING,
+    ts          DATETIME,
+    amount      DOUBLE,
+    product_cd  STRING,
+    channel     STRING,   // online | in_person
+    risk_score  DOUBLE,
+    addr1       STRING,
+    addr2       STRING,
+    dist1       DOUBLE,
+    p_email     STRING,
+    r_email     STRING,
+    device_status STRING, // id_15: New / Found
+    proxy_status  STRING, // id_23
+    match_false_count INT,
+    customer_id STRING,
+    card_id     STRING
+) WITH primary_id_as_attribute="true"
+
+// DeviceInfo | OS | browser | screen.  n_cards_total is what makes the
+// difference between a machine fingerprint and a browser-family bucket.
+CREATE VERTEX DeviceProfile (
+    PRIMARY_ID device_key STRING,
+    device_info STRING,
+    os          STRING,
+    browser     STRING,
+    screen      STRING,
+    device_type STRING,
+    n_txns      INT,
+    n_cards_total INT,
+    is_specific BOOL
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX EmailDomain (
+    PRIMARY_ID domain STRING,
+    n_txns INT
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX BillingRegion (
+    PRIMARY_ID region_code STRING,
+    country STRING,
+    n_txns  INT,
+    n_cards INT
+) WITH primary_id_as_attribute="true"
+
+// ------------------------------------------------------------- memory
+CREATE VERTEX ClosedCase (
+    PRIMARY_ID case_id STRING,
+    customer_id STRING,
+    card_id     STRING,
+    opened_at   DATETIME,
+    closed_at   DATETIME,
+    outcome     STRING,   // confirmed_fraud | cleared
+    pattern     STRING,
+    n_txns      INT,
+    exposure_usd DOUBLE,
+    actions_taken STRING,
+    report_filed  BOOL,
+    analyst_notes STRING
+) WITH primary_id_as_attribute="true"
+
+// Cases the agent opens.  This is the case memory the next investigation
+// retrieves, so it carries the verdict, the exposure and the actions.
+CREATE VERTEX AgentCase (
+    PRIMARY_ID graph_case_id STRING,
+    alert_case_id STRING,
+    opened_at   DATETIME,
+    status      STRING,   // open | closed_fraud | closed_legitimate | escalated
+    verdict     STRING,   // fraud | legitimate | uncertain
+    fraud_probability DOUBLE,
+    pattern     STRING,
+    pattern_description STRING,
+    exposure_usd DOUBLE,
+    summary     STRING,
+    stop_reason STRING,
+    sar_filed   BOOL,
+    initial_actions STRING,
+    final_actions   STRING,
+    trigger_type STRING,
+    tool_calls  INT
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX CaseEvidence (
+    PRIMARY_ID evidence_id STRING,
+    claim  STRING,
+    source STRING,        // graph | document | customer | external
+    ref    STRING,
+    seq    INT
+) WITH primary_id_as_attribute="true"
+
+// Policy / typology / regulatory text, chunked for GraphRAG retrieval.
+CREATE VERTEX PolicyChunk (
+    PRIMARY_ID chunk_id STRING,
+    doc     STRING,
+    section STRING,
+    text    STRING,
+    rule_id STRING
+) WITH primary_id_as_attribute="true"
+
+// ---------------------------------------------------------------- edges
+CREATE DIRECTED EDGE OWNS       (FROM Customer,    TO Card)        WITH REVERSE_EDGE="OWNED_BY"
+CREATE DIRECTED EDGE MADE       (FROM Card,        TO Transaction) WITH REVERSE_EDGE="MADE_BY"
+CREATE DIRECTED EDGE FROM_DEVICE(FROM Transaction, TO DeviceProfile) WITH REVERSE_EDGE="DEVICE_USED_BY"
+CREATE DIRECTED EDGE PURCHASER_EMAIL (FROM Transaction, TO EmailDomain) WITH REVERSE_EDGE="EMAIL_USED_BY"
+CREATE DIRECTED EDGE BILLED_IN  (FROM Transaction, TO BillingRegion) WITH REVERSE_EDGE="REGION_OF"
+CREATE DIRECTED EDGE NEXT       (FROM Transaction, TO Transaction) WITH REVERSE_EDGE="PREV"
+
+CREATE DIRECTED EDGE INVOLVES     (FROM ClosedCase, TO Transaction) WITH REVERSE_EDGE="INVOLVED_IN"
+CREATE DIRECTED EDGE ON_CARD      (FROM ClosedCase, TO Card)        WITH REVERSE_EDGE="HAS_CLOSED_CASE"
+CREATE DIRECTED EDGE CONNECTED_TO (FROM ClosedCase, TO Card)        WITH REVERSE_EDGE="CONNECTED_FROM"
+
+CREATE DIRECTED EDGE CASE_INVESTIGATES (FROM AgentCase, TO Transaction) WITH REVERSE_EDGE="INVESTIGATED_BY"
+CREATE DIRECTED EDGE CASE_ON_CARD      (FROM AgentCase, TO Card)        WITH REVERSE_EDGE="HAS_AGENT_CASE"
+CREATE DIRECTED EDGE CASE_CONNECTED_CARD (FROM AgentCase, TO Card)      WITH REVERSE_EDGE="CONNECTED_AGENT_CASE"
+CREATE DIRECTED EDGE CASE_CITES_PRIOR  (FROM AgentCase, TO ClosedCase)  WITH REVERSE_EDGE="CITED_BY"
+CREATE DIRECTED EDGE CASE_LINKS_DEVICE (FROM AgentCase, TO DeviceProfile) WITH REVERSE_EDGE="DEVICE_IN_CASE"
+CREATE DIRECTED EDGE CASE_HAS_EVIDENCE (FROM AgentCase, TO CaseEvidence) WITH REVERSE_EDGE="EVIDENCE_OF"
+CREATE DIRECTED EDGE CASE_APPLIES_RULE (FROM AgentCase, TO PolicyChunk)  WITH REVERSE_EDGE="RULE_APPLIED_IN"
+
+// ---------------------------------------------------- bind into the graph
+CREATE GRAPH Fraud_Investigation (
+    Customer, Card, Transaction, DeviceProfile, EmailDomain, BillingRegion,
+    ClosedCase, AgentCase, CaseEvidence, PolicyChunk,
+    OWNS, MADE, FROM_DEVICE, PURCHASER_EMAIL, BILLED_IN, NEXT,
+    INVOLVES, ON_CARD, CONNECTED_TO,
+    CASE_INVESTIGATES, CASE_ON_CARD, CASE_CONNECTED_CARD, CASE_CITES_PRIOR,
+    CASE_LINKS_DEVICE, CASE_HAS_EVIDENCE, CASE_APPLIES_RULE
+)

@@ -1,0 +1,240 @@
+// =====================================================================
+//  Installed GSQL queries - these ARE the agent's tools.
+//  Every `ref` in a case file's evidence points at one of these by name.
+//
+//  Install:  gsql -g Fraud_Investigation gsql/03_queries.gsql
+//            INSTALL QUERY ALL
+// =====================================================================
+USE GRAPH Fraud_Investigation
+
+// ---------------------------------------------------------------------
+// Q1  get_transaction - the anchor of every investigation
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY get_transaction(VERTEX<Transaction> txn) FOR GRAPH Fraud_Investigation {
+  SetAccum<STRING> @@device, @@region, @@email;
+  Start = {txn};
+  T = SELECT t FROM Start:t
+      ACCUM @@region += t.addr1, @@email += t.p_email;
+  D = SELECT d FROM Start:t -(FROM_DEVICE>)- DeviceProfile:d
+      ACCUM @@device += d.device_key;
+  PRINT T AS transaction, @@device AS device_profile;
+}
+
+// ---------------------------------------------------------------------
+// Q2  card_history - the cardholder's own behavioural baseline.
+//     Everything the agent calls "out of pattern" is measured against this.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY card_history(VERTEX<Card> card, DATETIME before_ts) FOR GRAPH Fraud_Investigation {
+  SumAccum<INT>    @@n;
+  SumAccum<DOUBLE> @@total;
+  MaxAccum<DOUBLE> @@max_amt;
+  SetAccum<STRING> @@products, @@channels, @@regions, @@emails, @@devices;
+
+  C = {card};
+  T = SELECT t FROM C:c -(MADE>)- Transaction:t
+      WHERE t.ts < before_ts
+      ACCUM @@n += 1, @@total += t.amount, @@max_amt += t.amount,
+            @@products += t.product_cd, @@channels += t.channel,
+            @@regions  += t.addr1,      @@emails   += t.p_email;
+
+  D = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d
+      ACCUM @@devices += d.device_key;
+
+  PRINT @@n AS n_txns, @@total AS total_spend, @@max_amt AS amount_max,
+        @@products AS product_codes, @@channels AS channels,
+        @@regions AS regions, @@emails AS email_domains, @@devices AS device_keys;
+}
+
+// ---------------------------------------------------------------------
+// Q3  card_window - what else happened on this card around the alert.
+//     Feeds the card-testing and burst detectors.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY card_window(VERTEX<Card> card, DATETIME center_ts, INT hours) FOR GRAPH Fraud_Investigation {
+  C = {card};
+  T = SELECT t FROM C:c -(MADE>)- Transaction:t
+      WHERE datetime_diff(t.ts, center_ts) <= hours*3600
+        AND datetime_diff(center_ts, t.ts) <= hours*3600
+      ORDER BY t.ts;
+  PRINT T AS window_txns;
+}
+
+// ---------------------------------------------------------------------
+// Q4  device_neighbors - the shared-origin traversal (policy R6).
+//
+//     Two hops: transaction -> device profile -> every other transaction ->
+//     its card.  n_cards_total on the DeviceProfile vertex separates a real
+//     machine fingerprint from a browser-family bucket: 'Windows | Windows 10
+//     | chrome 63.0 | 1920x1080' alone is shared by 842 unrelated cards, so
+//     rarity is what makes the link evidence.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY device_neighbors(VERTEX<DeviceProfile> device,
+                                         DATETIME center_ts, INT days) FOR GRAPH Fraud_Investigation {
+  SetAccum<STRING> @@cards;
+  SumAccum<INT>    @@n_txns;
+  AvgAccum         @@risk;
+
+  D = {device};
+  T = SELECT t FROM D:d -(DEVICE_USED_BY>)- Transaction:t
+      WHERE datetime_diff(t.ts, center_ts) <= days*86400
+        AND datetime_diff(center_ts, t.ts) <= days*86400
+      ACCUM @@n_txns += 1, @@risk += t.risk_score, @@cards += t.card_id;
+
+  PRINT D AS device, @@cards AS cards_in_window,
+        @@cards.size() AS n_cards_window, @@n_txns AS n_txns_window,
+        @@risk AS median_risk_window;
+}
+
+// ---------------------------------------------------------------------
+// Q5  device_ring - the undocumented pattern.
+//
+//     A rare, specific device profile whose cards nearly all appear inside one
+//     short window is several unrelated cardholders transacting from one
+//     machine.  The bank's model does not see it: these transactions score
+//     low individually and are only visible as a group, in the graph.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY device_ring(DATETIME window_start, DATETIME window_end,
+                                    INT min_cards, INT max_profile_cards) FOR GRAPH Fraud_Investigation {
+  TYPEDEF TUPLE<STRING device_key, INT n_cards_window, INT n_cards_total, DOUBLE median_risk> RING;
+  HeapAccum<RING>(200, n_cards_window DESC) @@rings;
+
+  Dev = {DeviceProfile.*};
+  Cand = SELECT d FROM Dev:d
+         WHERE d.is_specific AND d.n_cards_total <= max_profile_cards;
+
+  Cand = SELECT d FROM Cand:d -(DEVICE_USED_BY>)- Transaction:t
+         WHERE t.ts >= window_start AND t.ts <= window_end
+         ACCUM d.@cards += t.card_id, d.@risk += t.risk_score
+         POST-ACCUM
+           CASE WHEN d.@cards.size() >= min_cards THEN
+             @@rings += RING(d.device_key, d.@cards.size(), d.n_cards_total, d.@risk)
+           END;
+
+  PRINT @@rings AS rings;
+}
+
+// ---------------------------------------------------------------------
+// Q6  similar_prior_cases - case memory retrieval.
+//
+//     Scores closed investigations by how they connect to this alert:
+//     same card (5), same rare device profile (4), same customer (3).
+//     A device link is only followed when the profile is rare, otherwise
+//     every alert would retrieve hundreds of unrelated cases.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY similar_prior_cases(VERTEX<Card> card, INT k) FOR GRAPH Fraud_Investigation {
+  SumAccum<DOUBLE> @score;
+  SetAccum<STRING> @why;
+
+  C = {card};
+  Direct = SELECT cc FROM C:c -(HAS_CLOSED_CASE>)- ClosedCase:cc
+           ACCUM cc.@score += 5, cc.@why += "same card";
+
+  T   = SELECT t FROM C:c -(MADE>)- Transaction:t;
+  Dev = SELECT d FROM T:t -(FROM_DEVICE>)- DeviceProfile:d
+        WHERE d.is_specific AND d.n_cards_total <= 60;
+  DevT  = SELECT t2 FROM Dev:d -(DEVICE_USED_BY>)- Transaction:t2;
+  ViaDev = SELECT cc FROM DevT:t2 -(INVOLVED_IN>)- ClosedCase:cc
+           ACCUM cc.@score += 4, cc.@why += "same device profile";
+
+  Cust  = SELECT cu FROM C:c -(OWNED_BY>)- Customer:cu;
+  Cards = SELECT c2 FROM Cust:cu -(OWNS>)- Card:c2;
+  ViaCust = SELECT cc FROM Cards:c2 -(HAS_CLOSED_CASE>)- ClosedCase:cc
+            ACCUM cc.@score += 3, cc.@why += "same customer";
+
+  All = Direct UNION ViaDev UNION ViaCust;
+  All = SELECT cc FROM All:cc ORDER BY cc.@score DESC LIMIT k;
+  PRINT All AS prior_cases;
+}
+
+// ---------------------------------------------------------------------
+// Q7  region_cohort - billing-region check for pattern 4
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY region_cohort(VERTEX<BillingRegion> region,
+                                      DATETIME center_ts, INT days) FOR GRAPH Fraud_Investigation {
+  SetAccum<STRING> @@cards;
+  SumAccum<INT>    @@n;
+  R = {region};
+  T = SELECT t FROM R:r -(REGION_OF>)- Transaction:t
+      WHERE datetime_diff(t.ts, center_ts) <= days*86400
+        AND datetime_diff(center_ts, t.ts) <= days*86400
+      ACCUM @@n += 1, @@cards += t.card_id;
+  PRINT @@n AS n_txns_window, @@cards.size() AS n_cards_window;
+}
+
+// ---------------------------------------------------------------------
+// Q8  customer_cards - R10 guard: never block every card on one card's fraud
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY customer_cards(VERTEX<Customer> customer) FOR GRAPH Fraud_Investigation {
+  C = {customer};
+  Cards = SELECT c FROM C:cu -(OWNS>)- Card:c;
+  PRINT Cards AS cards;
+}
+
+// ---------------------------------------------------------------------
+// Q9  recurring_match - R7: does the disputed charge match the card's own
+//     established repeat pattern?  The dataset carries no merchant field, so
+//     same amount + same product code is the merchant proxy.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY recurring_match(VERTEX<Card> card, DOUBLE amount,
+                                        STRING product_cd, DATETIME before_ts) FOR GRAPH Fraud_Investigation {
+  SumAccum<INT> @@n;
+  MaxAccum<DATETIME> @@last;
+  MinAccum<DATETIME> @@first;
+  C = {card};
+  T = SELECT t FROM C:c -(MADE>)- Transaction:t
+      WHERE t.ts < before_ts AND t.product_cd == product_cd
+        AND abs(t.amount - amount) <= 0.02*amount + 0.5
+      ACCUM @@n += 1, @@last += t.ts, @@first += t.ts;
+  PRINT @@n AS n_prior_same_amount, @@first AS first_seen, @@last AS last_prior_ts, T AS prior_txns;
+}
+
+// ---------------------------------------------------------------------
+// Q10 write_case - the agent's case memory write-back.
+//     Creates the AgentCase vertex and links it to the transactions it
+//     investigated, the card, the connected cards, the device profile and
+//     the prior cases it cited, so the next investigation can retrieve it.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY write_case(STRING graph_case_id, STRING alert_case_id,
+      DATETIME opened_at, STRING status, STRING verdict, DOUBLE fraud_probability,
+      STRING pattern, STRING pattern_description, DOUBLE exposure_usd,
+      STRING summary, STRING stop_reason, BOOL sar_filed,
+      STRING initial_actions, STRING final_actions, STRING trigger_type, INT tool_calls,
+      SET<VERTEX<Transaction>> affected, VERTEX<Card> card,
+      SET<VERTEX<Card>> connected, SET<VERTEX<ClosedCase>> priors,
+      SET<VERTEX<DeviceProfile>> devices) FOR GRAPH Fraud_Investigation {
+
+  INSERT INTO AgentCase VALUES (graph_case_id, alert_case_id, opened_at, status, verdict,
+        fraud_probability, pattern, pattern_description, exposure_usd, summary,
+        stop_reason, sar_filed, initial_actions, final_actions, trigger_type, tool_calls);
+
+  FOREACH t IN affected DO
+    INSERT INTO CASE_INVESTIGATES VALUES (graph_case_id, t);
+  END;
+  INSERT INTO CASE_ON_CARD VALUES (graph_case_id, card);
+  FOREACH c IN connected DO
+    INSERT INTO CASE_CONNECTED_CARD VALUES (graph_case_id, c);
+  END;
+  FOREACH p IN priors DO
+    INSERT INTO CASE_CITES_PRIOR VALUES (graph_case_id, p);
+  END;
+  FOREACH d IN devices DO
+    INSERT INTO CASE_LINKS_DEVICE VALUES (graph_case_id, d);
+  END;
+  PRINT graph_case_id AS written;
+}
+
+// ---------------------------------------------------------------------
+// Q11 case_memory - read the agent's own cases back out.
+//     This is what makes the loop a memory: a later alert on a linked card
+//     or device retrieves the earlier AgentCase along with the ClosedCases.
+// ---------------------------------------------------------------------
+CREATE OR REPLACE QUERY case_memory(VERTEX<Card> card) FOR GRAPH Fraud_Investigation {
+  SumAccum<DOUBLE> @score;
+  C = {card};
+  Own = SELECT ac FROM C:c -(HAS_AGENT_CASE>)- AgentCase:ac
+        ACCUM ac.@score += 5;
+  Conn = SELECT ac FROM C:c -(CONNECTED_AGENT_CASE>)- AgentCase:ac
+         ACCUM ac.@score += 3;
+  All = Own UNION Conn;
+  All = SELECT ac FROM All:ac ORDER BY ac.@score DESC, ac.opened_at DESC LIMIT 10;
+  PRINT All AS agent_cases;
+}
