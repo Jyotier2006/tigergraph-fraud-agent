@@ -1,0 +1,163 @@
+{
+  "case_id": "HHG-011",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.61,
+    "pattern": "undocumented",
+    "pattern_description": "A single rare device profile (SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen) carries transactions for 4 different cards belonging to unrelated customers inside a 30-day window, 100% of every card that profile has ever been seen with (4 in total). There is no testing sequence, no shared billing region and no single compromised cardholder: the common element is the machine. The bank's model scored the cluster a median of 0.30, so none of it was flagged individually and it is only visible by traversing the device profile out to its neighbouring cards. It affects every cardholder on that device, and fits none of the five documented typologies.",
+    "affected_txn_ids": [
+      "3583368"
+    ],
+    "first_suspicious_txn_id": "3583368",
+    "connected_card_ids": [
+      "C03938-K1",
+      "C05595-K1",
+      "C05678-K1"
+    ],
+    "connected_device_profiles": [
+      "SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen"
+    ],
+    "exposure_usd": 131.3,
+    "evidence": [
+      {
+        "claim": "Device profile 'SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen' carries 4 distinct cards across unrelated customers inside a 30-day window (4 cards on this profile in the whole dataset, 100% of them in this window). Transactions cluster on product code(s) C x4 and the bank's model scored them a median of 0.30, so the cluster is invisible to the score.",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen', days=30)",
+        "entity_ids": [
+          "C03938-K1",
+          "C05595-K1",
+          "C05678-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen' was used by 3 other card(s) in the surrounding window (C03938-K1, C05595-K1, C05678-K1); 4 distinct cards have used it across the dataset",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen', days=30)",
+        "entity_ids": [
+          "C03938-K1",
+          "C05595-K1",
+          "C05678-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C11923-21363)",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "The disputed $131.30 charge is one this card has already made 38 times under the same product code, repeatedly over 171 days (most recently 2016-12-22). The dataset has no merchant field, so same-amount-and-product is used as the merchant proxy for policy R7; the charge matches the cardholder's own established pattern rather than standing outside it",
+        "source": "graph",
+        "ref": "query:recurring_match(card=C11923-21363, amount=131.3)",
+        "entity_ids": [
+          "3396545",
+          "3396604",
+          "3404280",
+          "3460881",
+          "3528954",
+          "3565743"
+        ]
+      },
+      {
+        "claim": "Closed case CC-0031 (card_not_present_new_device, confirmed fraud, $20.36) is linked to this alert by same card, same customer: \"Case CC-0031: cardholder C11923 reported unrecognized activity on card C11923-K2. 1 transaction(s) between 2016-07-02 and 2016-07-02 totaling $20.36 were confirmed fraudulent. Onli\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C11923-21363, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-0031",
+          "CC-0290",
+          "CC-1056",
+          "CC-2247"
+        ]
+      },
+      {
+        "claim": "Flagged amount $131.30 is 4.6x this card's median $28.58 (95th percentile $107.72, prior maximum $486.52)",
+        "source": "graph",
+        "ref": "query:card_history(card=C11923-21363)",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "R6. Shared origin. When several cards show fraud from the same device profile, the same billing region, or the same recipient email in one window, name the shared element, recommend `CREATE_CASE` and `FILE_REPORT`, and `MONITOR_CONNECTED_CARDS` for every card that shares it.",
+        "source": "document",
+        "ref": "policy:R6 (R6. Shared origin.)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0031",
+      "CC-0290",
+      "CC-1056",
+      "CC-2247",
+      "CC-2673"
+    ],
+    "summary": "Transaction 3583368 for $131.30 on card C11923-K2 (online, product C) on 2016-12-29 03:27 remains uncertain at fraud probability 0.61; the evidence points both ways. Device profile 'SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen' carries 4 distinct cards across unrelated customers inside a 30-day window (4 cards on this profile in the whole dataset, 100% of them in this window). Transactions cluster on product code(s) C x4 and the bank's model scored them a median of 0.30, so the cluster is invisible to the score. Device profile 'SM-G610F Build/NRD90M | unknown-os | chrome 66.0 for android | unknown-screen' was used by 3 other card(s) in the surrounding window (C03938-K1, C05595-K1, C05678-K1); 4 distinct cards have used it across the dataset. The device profile links this card to 3 other cards held by unrelated customers, so the compromise is wider than this alert. Closed cases CC-0031, CC-0290, CC-1056 were retrieved as memory and used to weigh the evidence.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-011"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. Shown the earlier identical monthly charges, the cardholder recognises the subscription and withdraws the dispute. Assumption recorded per policy section 5; the recurring match is the independent evidence behind it."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches the cardholder's own recurring pattern; open a case to hold the evidence"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm with the cardholder before any action on the card"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: probability is at or above 0.30, so the investigation is recorded as a case"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: keep the card active under raised monitoring while a human reviews"
+      },
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: require step-up authentication before further activity rather than blocking on inconclusive evidence"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: 3 other card(s) share the device profile named in the evidence"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.89 to 0.61, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is neither confirmed nor strongly suspected (probability 0.61), so no regulatory filing is due. The internal case carries the record.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 4303,
+  "latency_s": 0.23
+}

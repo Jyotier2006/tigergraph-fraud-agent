@@ -1,0 +1,118 @@
+{
+  "case_id": "HHG-007",
+  "case": {
+    "status": "escalated",
+    "verdict": "fraud",
+    "fraud_probability": 0.82,
+    "pattern": "undocumented",
+    "pattern_description": "Card-present activity on this card that matches none of the five documented typologies: the billing region is one the cardholder already uses, there is no testing sequence and no device link, yet the transaction sits outside the card's own amount and product profile. It affects this cardholder only, and was found by comparing the flagged transaction against the card's full history rather than by matching a known pattern.",
+    "affected_txn_ids": [
+      "3514948"
+    ],
+    "first_suspicious_txn_id": "3514948",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 111.92,
+    "evidence": [
+      {
+        "claim": "Closed case CC-0104 (out_of_region_use, confirmed fraud, $92.02) is linked to this alert by same card, same customer: \"Case CC-0104: cardholder C09933 reported unrecognized activity on card C09933-K2. 1 transaction(s) between 2016-07-04 and 2016-07-04 totaling $92.02 were confirmed fraudulent. Card\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C09933-15868, devices=0, pattern=)",
+        "entity_ids": [
+          "CC-0104",
+          "CC-0765",
+          "CC-1228",
+          "CC-1524"
+        ]
+      },
+      {
+        "claim": "Identity match flags M6, M7, M8 are 'F' on the flagged transaction (Vesta match checks such as name-to-address agreement); these are unnamed model features, used here only as corroboration",
+        "source": "graph",
+        "ref": "query:get_transaction",
+        "entity_ids": [
+          "3514948"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.87. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3514948"
+        ]
+      },
+      {
+        "claim": "0. What the agent starts with Every transaction carries a `risk_score` between 0 and 1 from the bank's detection model. The model is useful and imperfect: many high scores are legitimate, and some fraud scores low. A score is a reason to look, never a verdict. The only confirmed outcomes are in the closed cases.",
+        "source": "document",
+        "ref": "document:Fraud Policy / 0. What the agent starts with",
+        "entity_ids": []
+      },
+      {
+        "claim": "1. Actions | Action | What it does | Customer impact | |---|---|---| | `ALLOW_TRANSACTION` | Let the flagged transaction stand | None | | `DECLINE_TRANSACTION` | Decline the flagged authorization only. Card stays active | Low | | `MONITOR_CARD` | Card stays active; raise monitoring sensitivity for 72 hours | None | | `MONITOR_CONNECTED_CARDS` | Put other cards linked to the same device profile, region cluster, or rin",
+        "source": "document",
+        "ref": "document:Fraud Policy / 1. Actions",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0104",
+      "CC-0657",
+      "CC-0765",
+      "CC-1228",
+      "CC-1524"
+    ],
+    "summary": "Transaction 3514948 for $111.92 on card C09933-K2 (in person, product W) on 2016-12-05 00:46 is assessed as fraud at probability 0.82, consistent with an undocumented pattern. Closed case CC-0104 (out_of_region_use, confirmed fraud, $92.02) is linked to this alert by same card, same customer: \"Case CC-0104: cardholder C09933 reported unrecognized activity on card C09933-K2. 1 transaction(s) between 2016-07-04 and 2016-07-04 totaling $92.02 were confirmed fraudulent. Card\". Identity match flags M6, M7, M8 are 'F' on the flagged transaction (Vesta match checks such as name-to-address agreement); these are unnamed model features, used here only as corroboration. The episode covers 1 transaction totalling $111.92.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-007"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $111.92"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: the pattern matches none of the five documented typologies and shows coordinated abuse across customers"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $111.92"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: the pattern matches none of the five documented typologies and shows coordinated abuse across customers"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $111.92 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: probability 0.82 is inside the uncertain band and further graph evidence would not move it; the decision is handed on with the uncertainty stated (exposure $111.92).",
+  "tool_calls": 13,
+  "tokens": 3164,
+  "latency_s": 0.15
+}

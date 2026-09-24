@@ -1,0 +1,124 @@
+{
+  "case_id": "HHG-004",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3580804",
+      "3583227",
+      "3585446"
+    ],
+    "first_suspicious_txn_id": "3580804",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 305.06,
+    "evidence": [
+      {
+        "claim": "Device profile 'unknown-device | unknown-os | firefox 47.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C08106-21429)",
+        "entity_ids": [
+          "3583227"
+        ]
+      },
+      {
+        "claim": "Closed case CC-1736 (card_not_present_fraud, confirmed fraud, $9.90) is linked to this alert by same card, same customer: \"Case CC-1736: cardholder C08106 reported unrecognized activity on card C08106-K1. 1 transaction(s) between 2016-08-05 and 2016-08-05 totaling $9.90 were confirmed fraudulent. Onlin\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C08106-21429, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-1736",
+          "CC-2121",
+          "CC-3778"
+        ]
+      },
+      {
+        "claim": "8 online transactions on this card within 48 hours, 3 of them outside the cardholder's product or amount profile, totalling $305.06",
+        "source": "graph",
+        "ref": "query:card_window(card=C08106-21429, hours=72)",
+        "entity_ids": [
+          "3580804",
+          "3583227",
+          "3585446"
+        ]
+      },
+      {
+        "claim": "Flagged amount $128.33 is 4.6x this card's median $27.73 (95th percentile $96.39, prior maximum $138.89)",
+        "source": "graph",
+        "ref": "query:card_history(card=C08106-21429)",
+        "entity_ids": [
+          "3583227"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "R2. Customer denies the transaction. Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exposure exceeds $1,000 or the case connects to a shared device profile or another card's fraud.",
+        "source": "document",
+        "ref": "policy:R2 (R2. Customer denies the transaction.)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0696",
+      "CC-1736",
+      "CC-2121",
+      "CC-3778"
+    ],
+    "summary": "Transaction 3583227 for $128.33 on card C08106-K1 (online, product C) on 2016-12-29 01:53 is assessed as fraud at probability 0.95, consistent with card-not-present fraud from a new device. Device profile 'unknown-device | unknown-os | firefox 47.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account. Closed case CC-1736 (card_not_present_fraud, confirmed fraud, $9.90) is linked to this alert by same card, same customer: \"Case CC-1736: cardholder C08106 reported unrecognized activity on card C08106-K1. 1 transaction(s) between 2016-08-05 and 2016-08-05 totaling $9.90 were confirmed fraudulent. Onlin\". The episode covers 3 transactions totalling $305.06.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-004"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. The cardholder restates that they did not make the transaction and still holds the card. Assumption recorded per policy section 5; it is consistent with the graph evidence above."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/3a: the cardholder disputes the charge, so a case is opened to carry the evidence"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R2: raise monitoring while the investigation confirms the scope of the compromise"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $305.06"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.94 to 0.95, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $305.06 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 2847,
+  "latency_s": 0.19
+}

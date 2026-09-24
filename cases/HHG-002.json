@@ -1,0 +1,101 @@
+{
+  "case_id": "HHG-002",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.77,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478782"
+    ],
+    "first_suspicious_txn_id": "3478782",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 292.36,
+    "evidence": [
+      {
+        "claim": "Closed case CC-4160 (card_not_present_fraud, confirmed fraud, $90.54) is linked to this alert by same card, same customer: \"Case CC-4160: cardholder C11891 reported unrecognized activity on card C11891-K1. 1 transaction(s) between 2016-09-29 and 2016-09-29 totaling $90.54 were confirmed fraudulent. Onli\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C11891-18586, devices=0, pattern=)",
+        "entity_ids": [
+          "CC-4160"
+        ]
+      },
+      {
+        "claim": "Flagged amount $292.36 is 6.2x this card's median $47.29 (95th percentile $91.41, prior maximum $121.32)",
+        "source": "graph",
+        "ref": "query:card_history(card=C11891-18586)",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.79. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "0. What the agent starts with Every transaction carries a `risk_score` between 0 and 1 from the bank's detection model. The model is useful and imperfect: many high scores are legitimate, and some fraud scores low. A score is a reason to look, never a verdict. The only confirmed outcomes are in the closed cases.",
+        "source": "document",
+        "ref": "document:Fraud Policy / 0. What the agent starts with",
+        "entity_ids": []
+      },
+      {
+        "claim": "3. Rules **R1. Verify before you block on a weak signal.** If the case rests on a single signal (including a risk score alone) and your assessed fraud probability is below 0.70, recommend `VERIFY_WITH_CUSTOMER` or `STEP_UP_AUTH` before any block. Blocking a legitimate customer on one signal is a policy breach.  **R2. Customer denies the transaction.** Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exp",
+        "source": "document",
+        "ref": "document:Fraud Policy / 3. Rules",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4160"
+    ],
+    "summary": "Transaction 3478782 for $292.36 on card C11891-K1 (online, product C) on 2016-11-22 17:27 is assessed as fraud at probability 0.77, consistent with card-not-present fraud. Closed case CC-4160 (card_not_present_fraud, confirmed fraud, $90.54) is linked to this alert by same card, same customer: \"Case CC-4160: cardholder C11891 reported unrecognized activity on card C11891-K1. 1 transaction(s) between 2016-09-29 and 2016-09-29 totaling $90.54 were confirmed fraudulent. Onli\". Flagged amount $292.36 is 6.2x this card's median $47.29 (95th percentile $91.41, prior maximum $121.32). The episode covers 1 transaction totalling $292.36.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-002"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $292.36"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $292.36"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $292.36 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: probability 0.77 is inside the uncertain band and further graph evidence would not move it; the decision is handed on with the uncertainty stated (exposure $292.36).",
+  "tool_calls": 13,
+  "tokens": 1761,
+  "latency_s": 0.04
+}

@@ -1,0 +1,99 @@
+{
+  "case_id": "HHG-001",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "out_of_region_use",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3514030"
+    ],
+    "first_suspicious_txn_id": "3514030",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 77.07,
+    "evidence": [
+      {
+        "claim": "Card-present purchase in billing region 444.0, where this card has no history (home region 204.0 carries 35 transactions). 1 transaction(s) in the new region across 1 day(s), while 3 transaction(s) continued in the home region inside the same window \u2014 consistent with a cloned card rather than travel",
+        "source": "graph",
+        "ref": "query:card_history(card=C12382-21139)",
+        "entity_ids": [
+          "3514030"
+        ]
+      },
+      {
+        "claim": "Closed case CC-1066 (out_of_region_use, confirmed fraud, $170.98) is linked to this alert by same card, same customer: \"Case CC-1066: cardholder C12382 reported unrecognized activity on card C12382-K1. 1 transaction(s) between 2016-07-23 and 2016-07-23 totaling $170.98 were confirmed fraudulent. Car\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C12382-21139, devices=0, pattern=)",
+        "entity_ids": [
+          "CC-1066",
+          "CC-1673",
+          "CC-2964",
+          "CC-3587"
+        ]
+      },
+      {
+        "claim": "Pattern 4 Out-of-region use. Card-present purchases in a billing region the cardholder has no history in, while their normal activity continues at home. Several days of purchases in one new region is a trip, not a clone. Policy R2, R3.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 4: Out-of-region use",
+        "entity_ids": []
+      },
+      {
+        "claim": "R6. Shared origin. When several cards show fraud from the same device profile, the same billing region, or the same recipient email in one window, name the shared element, recommend `CREATE_CASE` and `FILE_REPORT`, and `MONITOR_CONNECTED_CARDS` for every card that shares it.",
+        "source": "document",
+        "ref": "policy:R6 (R6. Shared origin.)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1066",
+      "CC-1673",
+      "CC-2964",
+      "CC-3587"
+    ],
+    "summary": "Transaction 3514030 for $77.07 on card C12382-K1 (in person, product W) on 2016-12-04 19:55 is assessed as fraud at probability 0.95, consistent with out-of-region card-present use. Card-present purchase in billing region 444.0, where this card has no history (home region 204.0 carries 35 transactions). 1 transaction(s) in the new region across 1 day(s), while 3 transaction(s) continued in the home region inside the same window \u2014 consistent with a cloned card rather than travel. Closed case CC-1066 (out_of_region_use, confirmed fraud, $170.98) is linked to this alert by same card, same customer: \"Case CC-1066: cardholder C12382 reported unrecognized activity on card C12382-K1. 1 transaction(s) between 2016-07-23 and 2016-07-23 totaling $170.98 were confirmed fraudulent. Car\".",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-001"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $77.07"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $77.07"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $77.07 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: fraud probability 0.95 is at or above 0.85 and rests on 2 independent pieces of evidence. Further investigation would not change a defensible action.",
+  "tool_calls": 13,
+  "tokens": 2165,
+  "latency_s": 0.07
+}

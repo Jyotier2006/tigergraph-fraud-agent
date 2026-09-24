@@ -1,0 +1,110 @@
+{
+  "case_id": "HHG-013",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.04,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Device profile 'Windows | unknown-os | chrome 66.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C07671-22756)",
+        "entity_ids": [
+          "3526826"
+        ]
+      },
+      {
+        "claim": "Closed case CC-1475 (account_takeover, confirmed fraud, $1,307.98) is linked to this alert by same card, same customer: \"Case CC-1475: cardholder C07671 reported unrecognized activity on card C07671-K2. 10 transaction(s) between 2016-07-26 and 2016-07-29 totaling $1,307.98 were confirmed fraudulent. \"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C07671-22756, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-1475",
+          "CC-3216",
+          "CC-4294"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.76. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3526826"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "3. Rules **R1. Verify before you block on a weak signal.** If the case rests on a single signal (including a risk score alone) and your assessed fraud probability is below 0.70, recommend `VERIFY_WITH_CUSTOMER` or `STEP_UP_AUTH` before any block. Blocking a legitimate customer on one signal is a policy breach.  **R2. Customer denies the transaction.** Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exp",
+        "source": "document",
+        "ref": "document:Fraud Policy / 3. Rules",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1475",
+      "CC-3216",
+      "CC-3761",
+      "CC-4294"
+    ],
+    "summary": "Transaction 3526826 for $35.66 on card C07671-K2 (online, product C) on 2016-12-09 02:39 is assessed as legitimate at fraud probability 0.04. Device profile 'Windows | unknown-os | chrome 66.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account. Closed case CC-1475 (account_takeover, confirmed fraud, $1,307.98) is linked to this alert by same card, same customer: \"Case CC-1475: cardholder C07671 reported unrecognized activity on card C07671-K2. 10 transaction(s) between 2016-07-26 and 2016-07-29 totaling $1,307.98 were confirmed fraudulent. \". Closed cases CC-1475, CC-3216, CC-3761 were retrieved as memory and used to weigh the evidence.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-013"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 8,
+      "assumed_response": "Simulated. The cardholder confirms the transaction as their own. Assumption recorded per policy section 5; it follows the card's own history, which shows nothing out of pattern beyond the model score."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.18 is below 0.70, so the cardholder is asked before anything that would affect the card"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring sensitivity while the answer is pending"
+      }
+    ],
+    "final": [
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: the cardholder's own history explains the transaction; nothing supports a decline"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: the alert is a false positive of the model score"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.18 to 0.04, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is neither confirmed nor strongly suspected (probability 0.04), so no regulatory filing is due. The internal case carries the record.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 13189,
+  "latency_s": 0.1
+}

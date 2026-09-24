@@ -1,0 +1,130 @@
+{
+  "case_id": "HHG-003",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.08,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "The disputed $49.00 charge is one this card has already made 61 times under the same product code, repeatedly over 151 days (most recently 2016-12-05). The dataset has no merchant field, so same-amount-and-product is used as the merchant proxy for policy R7; the charge matches the cardholder's own established pattern rather than standing outside it",
+        "source": "graph",
+        "ref": "query:recurring_match(card=C08623-19739, amount=49.0)",
+        "entity_ids": [
+          "3487397",
+          "3499168",
+          "3499956",
+          "3501732",
+          "3511680",
+          "3515518"
+        ]
+      },
+      {
+        "claim": "Closed case CC-2817 (out_of_region_use, confirmed fraud, $38.96) is linked to this alert by same card, same customer: \"Case CC-2817: cardholder C08623 reported unrecognized activity on card C08623-K2. 1 transaction(s) between 2016-08-30 and 2016-08-30 totaling $38.96 were confirmed fraudulent. Card\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C08623-19739, devices=0, pattern=)",
+        "entity_ids": [
+          "CC-2817",
+          "CC-2935",
+          "CC-3327",
+          "CC-3682"
+        ]
+      },
+      {
+        "claim": "Purchaser email domain 'me.com' is new to this card (previously gmail.com, yahoo.com, aol.com, hotmail.com)",
+        "source": "graph",
+        "ref": "query:card_history(card=C08623-19739)",
+        "entity_ids": [
+          "3530164"
+        ]
+      },
+      {
+        "claim": "Identity match flags M5, M7, M8 are 'F' on the flagged transaction (Vesta match checks such as name-to-address agreement); these are unnamed model features, used here only as corroboration",
+        "source": "graph",
+        "ref": "query:get_transaction",
+        "entity_ids": [
+          "3530164"
+        ]
+      },
+      {
+        "claim": "3. Rules **R1. Verify before you block on a weak signal.** If the case rests on a single signal (including a risk score alone) and your assessed fraud probability is below 0.70, recommend `VERIFY_WITH_CUSTOMER` or `STEP_UP_AUTH` before any block. Blocking a legitimate customer on one signal is a policy breach.  **R2. Customer denies the transaction.** Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exp",
+        "source": "document",
+        "ref": "document:Fraud Policy / 3. Rules",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1589",
+      "CC-2817",
+      "CC-2935",
+      "CC-3327",
+      "CC-3682"
+    ],
+    "summary": "Transaction 3530164 for $49.00 on card C08623-K2 (in person, product W) on 2016-12-10 13:01 is assessed as legitimate at fraud probability 0.08. The disputed $49.00 charge is one this card has already made 61 times under the same product code, repeatedly over 151 days (most recently 2016-12-05). The dataset has no merchant field, so same-amount-and-product is used as the merchant proxy for policy R7; the charge matches the cardholder's own established pattern rather than standing outside it. Closed case CC-2817 (out_of_region_use, confirmed fraud, $38.96) is linked to this alert by same card, same customer: \"Case CC-2817: cardholder C08623 reported unrecognized activity on card C08623-K2. 1 transaction(s) between 2016-08-30 and 2016-08-30 totaling $38.96 were confirmed fraudulent. Card\".",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-003"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. Shown the earlier identical monthly charges, the cardholder recognises the subscription and withdraws the dispute. Assumption recorded per policy section 5; the recurring match is the independent evidence behind it."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches the cardholder's own recurring pattern; open a case to hold the evidence"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm with the cardholder before any action on the card"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: the dispute and its resolution are recorded against the card"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: send a recurring-charge reminder so the same subscription is not disputed again"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3/R7: the charge matches the cardholder's own recurring pattern"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.29 to 0.08, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is neither confirmed nor strongly suspected (probability 0.08), so no regulatory filing is due. The internal case carries the record.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 3182,
+  "latency_s": 0.11
+}

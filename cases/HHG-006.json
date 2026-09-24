@@ -1,0 +1,131 @@
+{
+  "case_id": "HHG-006",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.93,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3476602",
+      "3476633",
+      "3476665",
+      "3476682"
+    ],
+    "first_suspicious_txn_id": "3476602",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 1906.07,
+    "evidence": [
+      {
+        "claim": "Device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080': identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C07297-13729)",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "4 online transactions on this card within 48 hours, 4 of them outside the cardholder's product or amount profile, totalling $1,906.07",
+        "source": "graph",
+        "ref": "query:card_window(card=C07297-13729, hours=72)",
+        "entity_ids": [
+          "3476602",
+          "3476633",
+          "3476665",
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Flagged amount $482.12 is 7.7x this card's median $62.93 (95th percentile $414.69, prior maximum $1,104.00)",
+        "source": "graph",
+        "ref": "query:card_history(card=C07297-13729)",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.25. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 2 Card-not-present fraud. The number is used online without the card. Amounts and products that don't fit the cardholder's history, often in a burst of two to four within 48 hours. On its own, one unusual online purchase is ambiguous: verify. Policy R1 to R4.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 2: Card-not-present fraud",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Transaction 3476682 for $482.12 on card C07297-K1 (online, product C) on 2016-11-21 20:30 is assessed as fraud at probability 0.93, consistent with card-not-present fraud from a new device. Device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080': identity record marks the device 'New' for this account. 4 online transactions on this card within 48 hours, 4 of them outside the cardholder's product or amount profile, totalling $1,906.07. The episode covers 4 transactions totalling $1,906.07. Recommended: BLOCK_CARD, CREATE_CASE, FILE_REPORT.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-006"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. The cardholder restates that they did not make the transaction and still holds the card. Assumption recorded per policy section 5; it is consistent with the graph evidence above."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/3a: the cardholder disputes the charge, so a case is opened to carry the evidence"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R2: raise monitoring while the investigation confirms the scope of the compromise"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $1,906.07"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a: exposure $1,906.07 exceeds the $1,000 threshold"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.82 to 0.93, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": true,
+    "reason": "3a: exposure $1,906.07 exceeds the $1,000 threshold",
+    "narrative": "Between 2016-11-21 and 2016-11-21, 4 transactions totalling $1,906.07 were authorised on card C07297-K1, held by customer C07297: $478.95, $456.96, $488.04, $482.12. The activity was conducted online under product code C, billed in region 264.0, from device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080' which the identity record marks 'New' for this account. Device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080': identity record marks the device 'New' for this account. 4 online transactions on this card within 48 hours, 4 of them outside the cardholder's product or amount profile, totalling $1,906.07. Flagged amount $482.12 is 7.7x this card's median $62.93 (95th percentile $414.69, prior maximum $1,104.00). The activity is consistent with card-not-present fraud from a new device as described in the institution's fraud typologies. Assessed fraud probability is 0.93. Actions recorded: BLOCK_CARD, CREATE_CASE, FILE_REPORT. Total suspicious amount: $1,906.07. This report is filed under the institution's fraud policy section 3a; exposure $1,906.07 exceeds the $1,000 threshold.",
+    "subjects": [
+      "C07297",
+      "C07297-K1",
+      "Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080"
+    ],
+    "total_amount_usd": 1906.07,
+    "activity_dates": [
+      "2016-11-21",
+      "2016-11-21"
+    ]
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 7817,
+  "latency_s": 0.14
+}

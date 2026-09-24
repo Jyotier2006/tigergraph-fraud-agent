@@ -1,0 +1,89 @@
+{
+  "case_id": "HHG-009",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 30.02,
+    "evidence": [
+      {
+        "claim": "The bank's model scored this transaction 0.28. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3581141"
+        ]
+      },
+      {
+        "claim": "0. What the agent starts with Every transaction carries a `risk_score` between 0 and 1 from the bank's detection model. The model is useful and imperfect: many high scores are legitimate, and some fraud scores low. A score is a reason to look, never a verdict. The only confirmed outcomes are in the closed cases.",
+        "source": "document",
+        "ref": "document:Fraud Policy / 0. What the agent starts with",
+        "entity_ids": []
+      },
+      {
+        "claim": "3a. A case is not a report Two different things, and the agent produces both.  **A case** (`CREATE_CASE`) is the bank's internal record of an investigation. Open one whenever fraud probability reaches 0.30, whenever you request evidence, or whenever a customer disputes a charge. A case can be closed as fraud or as legitimate. It can be updated when new evidence arrives. It should be written into the graph so later in",
+        "source": "document",
+        "ref": "document:Fraud Policy / 3a. A case is not a report",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Transaction 3581141 for $30.02 on card C08299-K1 (online, product S) on 2016-12-28 12:10 is assessed as fraud at probability 0.95, consistent with card-not-present fraud. The bank's model scored this transaction 0.28. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud. 0. What the agent starts with Every transaction carries a `risk_score` between 0 and 1 from the bank's detection model. The model is useful and imperfect: many high scores are legitimate, and some fraud scores low.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-009"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. The cardholder restates that they did not make the transaction and still holds the card. Assumption recorded per policy section 5; it is consistent with the graph evidence above."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/3a: the cardholder disputes the charge, so a case is opened to carry the evidence"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R2: raise monitoring while the investigation confirms the scope of the compromise"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $30.02"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.87 to 0.95, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $30.02 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 11944,
+  "latency_s": 0.1
+}

@@ -1,0 +1,180 @@
+{
+  "case_id": "HHG-019",
+  "case": {
+    "status": "escalated",
+    "verdict": "fraud",
+    "fraud_probability": 0.75,
+    "pattern": "undocumented",
+    "pattern_description": "A single rare device profile (Windows | other | chrome 61.0 | 1280x720) carries transactions for 5 different cards belonging to unrelated customers inside a 30-day window, 100% of every card that profile has ever been seen with (5 in total). There is no testing sequence, no shared billing region and no single compromised cardholder: the common element is the machine. The bank's model scored the cluster a median of 0.71, so none of it was flagged individually and it is only visible by traversing the device profile out to its neighbouring cards. It affects every cardholder on that device, and fits none of the five documented typologies.",
+    "affected_txn_ids": [
+      "3503878"
+    ],
+    "first_suspicious_txn_id": "3503878",
+    "connected_card_ids": [
+      "C01104-K1",
+      "C01983-K1",
+      "C06224-K1",
+      "C11309-K1"
+    ],
+    "connected_device_profiles": [
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "exposure_usd": 99.92,
+    "evidence": [
+      {
+        "claim": "Device profile 'Windows | other | chrome 61.0 | 1280x720' carries 5 distinct cards across unrelated customers inside a 30-day window (5 cards on this profile in the whole dataset, 100% of them in this window). Transactions cluster on product code(s) R x5 and the bank's model scored them a median of 0.71, so the cluster is invisible to the score.",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='Windows | other | chrome 61.0 | 1280x720', days=30)",
+        "entity_ids": [
+          "C01104-K1",
+          "C01983-K1",
+          "C06224-K1",
+          "C11309-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'Windows | other | chrome 61.0 | 1280x720' was used by 4 other card(s) in the surrounding window (C01104-K1, C01983-K1, C06224-K1, C11309-K1); 5 distinct cards have used it across the dataset",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='Windows | other | chrome 61.0 | 1280x720', days=30)",
+        "entity_ids": [
+          "C01104-K1",
+          "C01983-K1",
+          "C06224-K1",
+          "C11309-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'Windows | other | chrome 61.0 | 1280x720': device profile not seen on this card before; identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C07987-11539)",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "Closed case CC-2011 (out_of_region_use, confirmed fraud, $3,059.89) is linked to this alert by same card, same customer: \"Case CC-2011: cardholder C07987 reported unrecognized activity on card C07987-K2. 5 transaction(s) between 2016-08-10 and 2016-08-11 totaling $3,059.89 were confirmed fraudulent. C\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C07987-11539, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-2011",
+          "CC-2860",
+          "CC-5026"
+        ]
+      },
+      {
+        "claim": "Purchaser email domain 'verizon.net' is new to this card (previously hotmail.com, gmail.com, aol.com, yahoo.com)",
+        "source": "graph",
+        "ref": "query:card_history(card=C07987-11539)",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.90. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3503878"
+        ]
+      },
+      {
+        "claim": "R6. Shared origin. When several cards show fraud from the same device profile, the same billing region, or the same recipient email in one window, name the shared element, recommend `CREATE_CASE` and `FILE_REPORT`, and `MONITOR_CONNECTED_CARDS` for every card that shares it.",
+        "source": "document",
+        "ref": "policy:R6 (R6. Shared origin.)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2011",
+      "CC-2087",
+      "CC-2860",
+      "CC-5026"
+    ],
+    "summary": "Transaction 3503878 for $99.92 on card C07987-K2 (online, product R) on 2016-12-01 17:28 is assessed as fraud at probability 0.75, consistent with an undocumented pattern. Device profile 'Windows | other | chrome 61.0 | 1280x720' carries 5 distinct cards across unrelated customers inside a 30-day window (5 cards on this profile in the whole dataset, 100% of them in this window). Transactions cluster on product code(s) R x5 and the bank's model scored them a median of 0.71, so the cluster is invisible to the score. Device profile 'Windows | other | chrome 61.0 | 1280x720' was used by 4 other card(s) in the surrounding window (C01104-K1, C01983-K1, C06224-K1, C11309-K1); 5 distinct cards have used it across the dataset. The device profile links this card to 4 other cards held by unrelated customers, so the compromise is wider than this alert. The episode covers 1 transaction totalling $99.92.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-019"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 8,
+      "assumed_response": "Simulated. The cardholder states they did not make this transaction. Assumption recorded per policy section 5; it follows the graph evidence above, which is independent of the model score."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.46 is below 0.70, so the cardholder is asked before anything that would affect the card"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring sensitivity while the answer is pending"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened because evidence has been requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $99.92"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a: the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: the device profile in the evidence is shared with C01104-K1, C01983-K1, C06224-K1, C11309-K1"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: the pattern matches none of the five documented typologies and shows coordinated abuse across customers"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.46 to 0.75, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": true,
+    "reason": "3a: the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers",
+    "narrative": "On 2016-12-01, a transaction of $99.92 was authorised on card C07987-K2, held by customer C07987. The activity was conducted online under product code R, billed in region 264.0, from device profile 'Windows | other | chrome 61.0 | 1280x720' which the identity record marks 'New' for this account. Device profile 'Windows | other | chrome 61.0 | 1280x720' carries 5 distinct cards across unrelated customers inside a 30-day window (5 cards on this profile in the whole dataset, 100% of them in this window). Transactions cluster on product code(s) R x5 and the bank's model scored them a median of 0.71, so the cluster is invisible to the score. Device profile 'Windows | other | chrome 61.0 | 1280x720' was used by 4 other card(s) in the surrounding window (C01104-K1, C01983-K1, C06224-K1, C11309-K1); 5 distinct cards have used it across the dataset. Device profile 'Windows | other | chrome 61.0 | 1280x720': device profile not seen on this card before; identity record marks the device 'New' for this account. The same device profile carries transactions for C01104-K1, C01983-K1, C06224-K1, C11309-K1, cards belonging to customers with no relationship to one another, which indicates a single actor operating across multiple cardholders rather than an isolated compromise. A single rare device profile (Windows | other | chrome 61.0 | 1280x720) carries transactions for 5 different cards belonging to unrelated customers inside a 30-day window, 100% of every card that profile has ever been seen with (5 in total). There is no testing sequence, no shared billing region and no single compromised cardholder: the common element is the machine. The bank's model scored the cluster a median of 0.71, so none of it was flagged individually and it is only visible by traversing the device profile out to its neighbouring cards. It affects every cardholder on that device, and fits none of the five documented typologies. Prior closed investigations CC-2011, CC-2087, CC-2860 connected to the same card or device profile were reviewed and support this assessment. Assessed fraud probability is 0.75. Actions recorded: BLOCK_CARD, CREATE_CASE, FILE_REPORT, MONITOR_CONNECTED_CARDS, ESCALATE_TO_ANALYST. Total suspicious amount: $99.92. This report is filed under the institution's fraud policy section 3a; the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers.",
+    "subjects": [
+      "C07987",
+      "C07987-K2",
+      "C01104-K1",
+      "C01983-K1",
+      "C06224-K1",
+      "C11309-K1",
+      "Windows | other | chrome 61.0 | 1280x720"
+    ],
+    "total_amount_usd": 99.92,
+    "activity_dates": [
+      "2016-12-01",
+      "2016-12-01"
+    ]
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 4401,
+  "latency_s": 0.14
+}

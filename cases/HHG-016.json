@@ -1,0 +1,89 @@
+{
+  "case_id": "HHG-016",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.95,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3534820"
+    ],
+    "first_suspicious_txn_id": "3534820",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 59.67,
+    "evidence": [
+      {
+        "claim": "Device profile 'Windows | unknown-os | edge 16.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C09988-11242)",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "R2. Customer denies the transaction. Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exposure exceeds $1,000 or the case connects to a shared device profile or another card's fraud.",
+        "source": "document",
+        "ref": "policy:R2 (R2. Customer denies the transaction.)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Transaction 3534820 for $59.67 on card C09988-K1 (online, product C) on 2016-12-11 22:39 is assessed as fraud at probability 0.95, consistent with card-not-present fraud from a new device. Device profile 'Windows | unknown-os | edge 16.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'New' for this account. Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones. The episode covers 1 transaction totalling $59.67.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-016"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. The cardholder restates that they did not make the transaction and still holds the card. Assumption recorded per policy section 5; it is consistent with the graph evidence above."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2/3a: the cardholder disputes the charge, so a case is opened to carry the evidence"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R2: raise monitoring while the investigation confirms the scope of the compromise"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $59.67"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.87 to 0.95, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is strongly suspected but none of the filing triggers are met (exposure $59.67 is under $1,000, no shared origin, no link to another customer's fraud). Case only, no report.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 4468,
+  "latency_s": 0.07
+}

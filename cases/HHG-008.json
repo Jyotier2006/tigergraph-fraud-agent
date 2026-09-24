@@ -1,0 +1,124 @@
+{
+  "case_id": "HHG-008",
+  "case": {
+    "status": "open",
+    "verdict": "uncertain",
+    "fraud_probability": 0.33,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3558054"
+    ],
+    "first_suspicious_txn_id": "3558054",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 55.68,
+    "evidence": [
+      {
+        "claim": "Device profile 'unknown-device | unknown-os | chrome 66.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'Found' for this account",
+        "source": "graph",
+        "ref": "query:card_history(card=C13171-10114)",
+        "entity_ids": [
+          "3558054"
+        ]
+      },
+      {
+        "claim": "The disputed $55.68 charge is one this card has already made 14 times under the same product code, repeatedly over 151 days (most recently 2016-12-19). The dataset has no merchant field, so same-amount-and-product is used as the merchant proxy for policy R7; the charge matches the cardholder's own established pattern rather than standing outside it",
+        "source": "graph",
+        "ref": "query:recurring_match(card=C13171-10114, amount=55.68)",
+        "entity_ids": [
+          "3469864",
+          "3502698",
+          "3502702",
+          "3528163",
+          "3557979",
+          "3557987"
+        ]
+      },
+      {
+        "claim": "Closed case CC-0056 (card_not_present_new_device, confirmed fraud, $40.21) is linked to this alert by same card, same customer: \"Case CC-0056: cardholder C13171 reported unrecognized activity on card C13171-K2. 1 transaction(s) between 2016-07-03 and 2016-07-03 totaling $40.21 were confirmed fraudulent. Onli\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C13171-10114, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-0056",
+          "CC-0467",
+          "CC-0772",
+          "CC-1293"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "3. Rules **R1. Verify before you block on a weak signal.** If the case rests on a single signal (including a risk score alone) and your assessed fraud probability is below 0.70, recommend `VERIFY_WITH_CUSTOMER` or `STEP_UP_AUTH` before any block. Blocking a legitimate customer on one signal is a policy breach.  **R2. Customer denies the transaction.** Recommend `BLOCK_CARD` and `CREATE_CASE`. Add `FILE_REPORT` if exp",
+        "source": "document",
+        "ref": "document:Fraud Policy / 3. Rules",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0056",
+      "CC-0467",
+      "CC-0772",
+      "CC-1293",
+      "CC-1715"
+    ],
+    "summary": "Transaction 3558054 for $55.68 on card C13171-K2 (online, product C) on 2016-12-19 22:08 remains uncertain at fraud probability 0.33; the evidence points both ways. Device profile 'unknown-device | unknown-os | chrome 66.0 | unknown-screen': device profile not seen on this card before; identity record marks the device 'Found' for this account. The disputed $55.68 charge is one this card has already made 14 times under the same product code, repeatedly over 151 days (most recently 2016-12-19). The dataset has no merchant field, so same-amount-and-product is used as the merchant proxy for policy R7; the charge matches the cardholder's own established pattern rather than standing outside it. Closed cases CC-0056, CC-0467, CC-0772 were retrieved as memory and used to weigh the evidence. Recommended: CREATE_CASE, MONITOR_CARD, STEP_UP_AUTH.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-008"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 7,
+      "assumed_response": "Simulated. Shown the earlier identical monthly charges, the cardholder recognises the subscription and withdraws the dispute. Assumption recorded per policy section 5; the recurring match is the independent evidence behind it."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7: disputed charge matches the cardholder's own recurring pattern; open a case to hold the evidence"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm with the cardholder before any action on the card"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: probability is at or above 0.30, so the investigation is recorded as a case"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: keep the card active under raised monitoring while a human reviews"
+      },
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: require step-up authentication before further activity rather than blocking on inconclusive evidence"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.71 to 0.33, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud is neither confirmed nor strongly suspected (probability 0.33), so no regulatory filing is due. The internal case carries the record.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 10672,
+  "latency_s": 0.09
+}

@@ -1,0 +1,225 @@
+{
+  "case_id": "HHG-014",
+  "case": {
+    "status": "escalated",
+    "verdict": "fraud",
+    "fraud_probability": 0.84,
+    "pattern": "undocumented",
+    "pattern_description": "A single rare device profile (SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080) carries transactions for 28 different cards belonging to unrelated customers inside a 30-day window, 54% of every card that profile has ever been seen with (52 in total). There is no testing sequence, no shared billing region and no single compromised cardholder: the common element is the machine. The bank's model scored the cluster a median of 0.13, so none of it was flagged individually and it is only visible by traversing the device profile out to its neighbouring cards. It affects every cardholder on that device, and fits none of the five documented typologies.",
+    "affected_txn_ids": [
+      "3478561"
+    ],
+    "first_suspicious_txn_id": "3478561",
+    "connected_card_ids": [
+      "C01289-K1",
+      "C01996-K1",
+      "C02910-K1",
+      "C02975-K1",
+      "C03676-K1",
+      "C04108-K1",
+      "C04274-K1",
+      "C05448-K1",
+      "C06031-K1",
+      "C06650-K1",
+      "C06710-K1",
+      "C07472-K1",
+      "C08168-K1",
+      "C08972-K1",
+      "C09049-K1",
+      "C09195-K1",
+      "C09906-K1",
+      "C09975-K1",
+      "C10020-K1",
+      "C10193-K1",
+      "C10326-K1",
+      "C11082-K1",
+      "C11670-K1",
+      "C11702-K1",
+      "C12645-K1",
+      "C12796-K1",
+      "C13291-K1"
+    ],
+    "connected_device_profiles": [
+      "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
+    ],
+    "exposure_usd": 74.96,
+    "evidence": [
+      {
+        "claim": "Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' carries 28 distinct cards across unrelated customers inside a 30-day window (52 cards on this profile in the whole dataset, 54% of them in this window). Transactions cluster on product code(s) C x60 and the bank's model scored them a median of 0.13, so the cluster is invisible to the score.",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080', days=30)",
+        "entity_ids": [
+          "C01289-K1",
+          "C01996-K1",
+          "C02910-K1",
+          "C02975-K1",
+          "C03676-K1",
+          "C04108-K1",
+          "C04274-K1",
+          "C05448-K1",
+          "C06031-K1",
+          "C06650-K1",
+          "C06710-K1",
+          "C07472-K1",
+          "C08168-K1",
+          "C08972-K1",
+          "C09049-K1",
+          "C09195-K1",
+          "C09906-K1",
+          "C09975-K1",
+          "C10020-K1",
+          "C10193-K1",
+          "C10326-K1",
+          "C11082-K1",
+          "C11670-K1",
+          "C11702-K1",
+          "C12645-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' was used by 27 other card(s) in the surrounding window (C01289-K1, C01996-K1, C02910-K1, C02975-K1, C03676-K1, C04108-K1); 52 distinct cards have used it across the dataset",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_key='SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080', days=30)",
+        "entity_ids": [
+          "C01289-K1",
+          "C01996-K1",
+          "C02910-K1",
+          "C02975-K1",
+          "C03676-K1",
+          "C04108-K1",
+          "C04274-K1",
+          "C05448-K1",
+          "C06031-K1",
+          "C06650-K1"
+        ]
+      },
+      {
+        "claim": "Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080': identity record marks the device 'New' for this account; connection behind a IP_PROXY:ANONYMOUS proxy",
+        "source": "graph",
+        "ref": "query:card_history(card=C13487-13250)",
+        "entity_ids": [
+          "3478561"
+        ]
+      },
+      {
+        "claim": "Closed case CC-2649 (undocumented, confirmed fraud, $390.04) is linked to this alert by same device profile: \"Case CC-2649: cardholder C03528 reported 3 online purchase(s) they did not make. The purchases came from a Samsung SM-G935F on Chrome for Android behind an anonymous proxy, a devic\"",
+        "source": "graph",
+        "ref": "query:similar_prior_cases(card=C13487-13250, devices=1, pattern=)",
+        "entity_ids": [
+          "CC-2649",
+          "CC-2971",
+          "CC-2985",
+          "CC-3035"
+        ]
+      },
+      {
+        "claim": "The bank's model scored this transaction 0.05. Per the dataset documentation most transactions scored above 0.70 are legitimate, so the score is treated as a reason to look, not as evidence of fraud",
+        "source": "document",
+        "ref": "policy:Section 0 / README 'Things to know'",
+        "entity_ids": [
+          "3478561"
+        ]
+      },
+      {
+        "claim": "Pattern 3 Card-not-present fraud from a new device. Same as above, with the identity record marking the device as `New` for this account, sometimes behind a proxy. Stronger than pattern 2, still not proof: people buy new phones.",
+        "source": "document",
+        "ref": "document:Known fraud patterns / Pattern 3: Card-not-present fraud from a new device",
+        "entity_ids": []
+      },
+      {
+        "claim": "R6. Shared origin. When several cards show fraud from the same device profile, the same billing region, or the same recipient email in one window, name the shared element, recommend `CREATE_CASE` and `FILE_REPORT`, and `MONITOR_CONNECTED_CARDS` for every card that shares it.",
+        "source": "document",
+        "ref": "policy:R6 (R6. Shared origin.)",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2649",
+      "CC-2971",
+      "CC-2985",
+      "CC-3035"
+    ],
+    "summary": "Transaction 3478561 for $74.96 on card C13487-K1 (online, product C) on 2016-11-22 16:11 is assessed as fraud at probability 0.84, consistent with an undocumented pattern. Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' carries 28 distinct cards across unrelated customers inside a 30-day window (52 cards on this profile in the whole dataset, 54% of them in this window). Transactions cluster on product code(s) C x60 and the bank's model scored them a median of 0.13, so the cluster is invisible to the score. Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' was used by 27 other card(s) in the surrounding window (C01289-K1, C01996-K1, C02910-K1, C02975-K1, C03676-K1, C04108-K1); 52 distinct cards have used it across the dataset. The device profile links this card to 27 other cards held by unrelated customers, so the compromise is wider than this alert. The episode covers 1 transaction totalling $74.96.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-2016-014"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 8,
+      "assumed_response": "Simulated. The cardholder states they did not make this transaction. Assumption recorded per policy section 5; it follows the graph evidence above, which is independent of the model score."
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.59 is below 0.70, so the cardholder is asked before anything that would affect the card"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R1: keep the card active but raise monitoring sensitivity while the answer is pending"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened because evidence has been requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: the cardholder denies the activity and the card is compromised; exposure $74.96"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: an internal case carries the evidence, the affected transactions and the actions taken"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a: the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: the device profile in the evidence is shared with C01289-K1, C01996-K1, C02910-K1, C02975-K1"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: the pattern matches none of the five documented typologies and shows coordinated abuse across customers"
+      }
+    ],
+    "what_changed": "The assumed response to the customer validation moved fraud probability from 0.59 to 0.84, which changes the recommended actions under the policy."
+  },
+  "sar": {
+    "file": true,
+    "reason": "3a: the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers",
+    "narrative": "On 2016-11-22, a transaction of $74.96 was authorised on card C13487-K1, held by customer C13487. The activity was conducted online under product code C, billed in region 191.0, from device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' which the identity record marks 'New' for this account. Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' carries 28 distinct cards across unrelated customers inside a 30-day window (52 cards on this profile in the whole dataset, 54% of them in this window). Transactions cluster on product code(s) C x60 and the bank's model scored them a median of 0.13, so the cluster is invisible to the score. Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' was used by 27 other card(s) in the surrounding window (C01289-K1, C01996-K1, C02910-K1, C02975-K1, C03676-K1, C04108-K1); 52 distinct cards have used it across the dataset. Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080': identity record marks the device 'New' for this account; connection behind a IP_PROXY:ANONYMOUS proxy. The same device profile carries transactions for C01289-K1, C01996-K1, C02910-K1, C02975-K1, C03676-K1, C04108-K1, C04274-K1, C05448-K1 and 19 further cards, cards belonging to customers with no relationship to one another, which indicates a single actor operating across multiple cardholders rather than an isolated compromise. A single rare device profile (SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080) carries transactions for 28 different cards belonging to unrelated customers inside a 30-day window, 54% of every card that profile has ever been seen with (52 in total). There is no testing sequence, no shared billing region and no single compromised cardholder: the common element is the machine. The bank's model scored the cluster a median of 0.13, so none of it was flagged individually and it is only visible by traversing the device profile out to its neighbouring cards. It affects every cardholder on that device, and fits none of the five documented typologies. Prior closed investigations CC-2649, CC-2971, CC-2985 connected to the same card or device profile were reviewed and support this assessment. Assessed fraud probability is 0.84. Actions recorded: BLOCK_CARD, CREATE_CASE, FILE_REPORT, MONITOR_CONNECTED_CARDS, ESCALATE_TO_ANALYST. Total suspicious amount: $74.96. This report is filed under the institution's fraud policy section 3a; the activity connects to a shared device profile / region cluster; the activity connects to another card's fraud; R9: the pattern is undocumented and shows coordinated abuse across customers.",
+    "subjects": [
+      "C13487",
+      "C13487-K1",
+      "C01289-K1",
+      "C01996-K1",
+      "C02910-K1",
+      "C02975-K1",
+      "C03676-K1",
+      "C04108-K1",
+      "SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
+    ],
+    "total_amount_usd": 74.96,
+    "activity_dates": [
+      "2016-11-22",
+      "2016-11-22"
+    ]
+  },
+  "stop_reason": "Policy 6: the verification response settled the question; the remaining steps could not change the recommended actions.",
+  "tool_calls": 13,
+  "tokens": 5347,
+  "latency_s": 0.09
+}
